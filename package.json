@@ -1,12 +1,12 @@
 {
-  "name": "ferdinando-ia",
+  "name": "Kaizen",
   "version": "1.0.0",
-  "description": "Bot Ferdinando IA — amigo chapado BR com memória, ações, personalidade e integração GROQ.",
+  "description": "Bot Kaizen IA — amigo chapado BR com memória, ações, personalidade e integração GROQ.",
   "main": "src/core/index.js",
   "type": "module",
   "scripts": {
     "start": "node src/core/index.js",
-    "pm2": "pm2 start src/core/index.js --name ferdinando-ia",
+    "pm2": "pm2 start src/core/index.js --name Kaizen",
     "dev": "nodemon src/core/index.js"
   },
   "dependencies": {
