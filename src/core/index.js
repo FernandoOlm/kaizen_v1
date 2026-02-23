@@ -729,6 +729,7 @@ if (cmd === "!membros") {
   // 🔥 COMANDOS COM IA
   // ============================================================
   if (comandosJSON[cmd]) {
+    if (cmd === "!membros") return;
     const cfg = comandosJSON[cmd];
 
     const meta = await sock.groupMetadata(jid);
