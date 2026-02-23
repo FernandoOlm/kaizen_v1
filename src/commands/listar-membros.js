@@ -1,40 +1,92 @@
-// INÍCIO listar-membros.js — versão adaptada PROFISSIONAL
+// INÍCIO listar-membros.js — VERSÃO PRO V2 TOTAL
 
 export async function comandoListarMembros(msg, sock) {
-  const jid = msg.key.remoteJid;
-  const meta = await sock.groupMetadata(jid);
+  try {
+    // INÍCIO — Identifica JID
+    const jid = msg.key.remoteJid;
+    console.log("[LISTAR MEMBROS] JID recebido:", jid);
+    // FIM
 
-  const membros = [];
+    // INÍCIO — Confere se é grupo
+    if (!jid.endsWith("@g.us")) {
+      console.log("[LISTAR MEMBROS] Não é grupo, ignorando.");
+      return {
+        tipo: "listar_membros",
+        erro: "JID não é grupo",
+        membros: []
+      };
+    }
+    // FIM
 
-  for (const p of meta.participants) {
-    const wid = p.id;                // ex: 55119..@c.us ou 1234..@lid
-    const base = wid.split("@")[0];  // número ou LID
-    const dominio = wid.split("@")[1];
-
-    // Nome detectável
-    const nomeDetectado =
-      p.notify ||
-      p.name ||
-      p.vname ||
-      null;
-
-    let nomeFinal = "Oculto";
-
-    // Se for número real
-    if (dominio === "c.us" || dominio === "s.whatsapp.net") {
-      nomeFinal = nomeDetectado ? nomeDetectado : "Sem nome";
-    } else {
-      // É LID
-      nomeFinal = nomeDetectado ? `${nomeDetectado} (privado)` : "Oculto";
+    // INÍCIO — Puxa metadata
+    let meta;
+    try {
+      meta = await sock.groupMetadata(jid);
+    } catch (e) {
+      console.log("[LISTAR MEMBROS] Erro ao puxar metadata:", e);
+      return {
+        tipo: "listar_membros",
+        erro: "Falha ao puxar metadata do grupo",
+        membros: []
+      };
     }
 
-    membros.push(`${base} | ${nomeFinal}`);
-  }
+    console.log("[LISTAR MEMBROS] Metadata recebida. Participants:", meta?.participants?.length);
+    // FIM
 
-  return {
-    tipo: "listar_membros",
-    membros
-  };
+    // INÍCIO — Se não vier participants, provavelmente sem admin
+    if (!meta.participants || meta.participants.length === 0) {
+      console.log("[LISTAR MEMBROS] Participants vazio → bot sem admin.");
+      return {
+        tipo: "listar_membros",
+        erro: "Permissão insuficiente (bot não é admin)",
+        membros: []
+      };
+    }
+    // FIM
+
+    // INÍCIO — Lista final
+    const membros = meta.participants.map(p => {
+      const wid = p.id; // ex: 55119..@c.us
+      const [base, dominio] = wid.split("@");
+
+      const nomeDetectado =
+        p.notify ||
+        p.name ||
+        p.vname ||
+        null;
+
+      let nomeFinal = "Oculto";
+
+      if (dominio === "c.us" || dominio === "s.whatsapp.net") {
+        nomeFinal = nomeDetectado ? nomeDetectado : "Sem nome";
+      } else {
+        nomeFinal = nomeDetectado
+          ? `${nomeDetectado} (privado)`
+          : "Oculto";
+      }
+
+      return `${base} | ${nomeFinal}`;
+    });
+    // FIM
+
+    // INÍCIO — Retorna
+    return {
+      tipo: "listar_membros",
+      total: membros.length,
+      membros
+    };
+    // FIM
+
+  } catch (err) {
+    console.log("[LISTAR MEMBROS] Erro crítico:", err);
+    return {
+      tipo: "listar_membros",
+      erro: "Erro inesperado",
+      detalhes: String(err),
+      membros: []
+    };
+  }
 }
 
-// FIM listar-membros.js
+// FIM listar-membros.js — VERSÃO PRO V2 TOTAL
