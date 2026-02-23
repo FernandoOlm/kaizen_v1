@@ -20,7 +20,7 @@ import { ativarXerife, desativarXerife, xerifeAtivo } from "../commands/xerife.j
 import { registrarLink, linkDuplicado } from "../commands/xerifeRegras.js";
 //import { comandoAbrir, comandoFechar } from "../commands/abrir-fechar.js";
 //import { comandoSorteio } from "../commands/sorteio.js";
-//import { comandoListarMembros } from "../commands/listar-membros.js";
+import { comandoListarMembros } from "../commands/listar-membros.js";
 //import { usuarioPodeAnunciar } from "../commands/xerifeRegras.js";
 
 
@@ -612,6 +612,7 @@ function loadComandosJSON() {
     "!globalbans",
     "!unban",
     "!all",
+    "!membros",
     //"!lembrete",
     "!sorteio",
     "!cadastro-all",
@@ -641,7 +642,11 @@ function loadComandosJSON() {
       fromClean,
       isAdmin
     });
-
+if (cmd === "!membros") {
+  const { handlerListarMembros } = await hotImport("../commands/listar-membros.js");
+  await handlerListarMembros(msg, sock, "!membros");
+  return;
+}
 
     // ============================
     // VALIDAÇÃO UNIVERSAL DE PERMISSÃO
