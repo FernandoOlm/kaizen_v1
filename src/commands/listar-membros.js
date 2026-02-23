@@ -1,32 +1,39 @@
-// INÍCIO listar-membros.js — VERSÃO PRO V2 TOTAL
+// INÍCIO — importar se necessário
+// (ajuste o caminho conforme sua estrutura)
+import pkg from "@whiskeysockets/baileys";
+const { delay } = pkg;
+// FIM
 
+
+
+// =========================================================
+// INÍCIO listar-membros.js — Função PRO
+// =========================================================
 export async function comandoListarMembros(msg, sock) {
   try {
-    // INÍCIO — Identifica JID
+    // INÍCIO — JID
     const jid = msg.key.remoteJid;
     console.log("[LISTAR MEMBROS] JID recebido:", jid);
     // FIM
 
-    // INÍCIO — Confere se é grupo
+    // INÍCIO — Verifica se é grupo
     if (!jid.endsWith("@g.us")) {
       console.log("[LISTAR MEMBROS] Não é grupo, ignorando.");
       return {
-        tipo: "listar_membros",
-        erro: "JID não é grupo",
+        erro: "Este comando só funciona em grupos.",
         membros: []
       };
     }
     // FIM
 
-    // INÍCIO — Puxa metadata
+    // INÍCIO — Metadata
     let meta;
     try {
       meta = await sock.groupMetadata(jid);
     } catch (e) {
       console.log("[LISTAR MEMBROS] Erro ao puxar metadata:", e);
       return {
-        tipo: "listar_membros",
-        erro: "Falha ao puxar metadata do grupo",
+        erro: "Não consegui puxar os dados do grupo.",
         membros: []
       };
     }
@@ -34,20 +41,18 @@ export async function comandoListarMembros(msg, sock) {
     console.log("[LISTAR MEMBROS] Metadata recebida. Participants:", meta?.participants?.length);
     // FIM
 
-    // INÍCIO — Se não vier participants, provavelmente sem admin
+    // INÍCIO — Sem admin?
     if (!meta.participants || meta.participants.length === 0) {
-      console.log("[LISTAR MEMBROS] Participants vazio → bot sem admin.");
       return {
-        tipo: "listar_membros",
-        erro: "Permissão insuficiente (bot não é admin)",
+        erro: "O bot NÃO é admin. O WhatsApp bloqueia a lista.",
         membros: []
       };
     }
     // FIM
 
-    // INÍCIO — Lista final
+    // INÍCIO — Processamento dos membros
     const membros = meta.participants.map(p => {
-      const wid = p.id; // ex: 55119..@c.us
+      const wid = p.id;
       const [base, dominio] = wid.split("@");
 
       const nomeDetectado =
@@ -70,23 +75,73 @@ export async function comandoListarMembros(msg, sock) {
     });
     // FIM
 
-    // INÍCIO — Retorna
     return {
-      tipo: "listar_membros",
       total: membros.length,
       membros
     };
-    // FIM
 
   } catch (err) {
-    console.log("[LISTAR MEMBROS] Erro crítico:", err);
+    console.log("[LISTAR MEMBROS] ERRO CRÍTICO:", err);
     return {
-      tipo: "listar_membros",
-      erro: "Erro inesperado",
-      detalhes: String(err),
+      erro: "Erro inesperado.",
       membros: []
     };
   }
 }
+// =========================================================
+// FIM listar-membros.js — Função PRO
+// =========================================================
 
-// FIM listar-membros.js — VERSÃO PRO V2 TOTAL
+
+
+
+
+// =========================================================
+// INÍCIO — Handler do comando !membros
+// =========================================================
+export async function handlerListarMembros(msg, sock, command) {
+  try {
+    // INÍCIO — Só ativa no comando correto
+    if (command !== "!membros") return;
+    // FIM
+
+    // INÍCIO — Chama função principal
+    const r = await comandoListarMembros(msg, sock);
+    // FIM
+
+    // INÍCIO — Tratamento de erro
+    if (r.erro) {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: `❌ ${r.erro}`
+      });
+      return;
+    }
+    // FIM
+
+    // INÍCIO — Sem membros
+    if (!r.membros || r.membros.length === 0) {
+      await sock.sendMessage(msg.key.remoteJid, {
+        text: "Nenhum membro encontrado."
+      });
+      return;
+    }
+    // FIM
+
+    // INÍCIO — Monta texto final
+    const texto = `👥 *Membros (${r.total})*\n\n${r.membros.join("\n")}`;
+    // FIM
+
+    // INÍCIO — Envia
+    await sock.sendMessage(msg.key.remoteJid, { text: texto });
+    // FIM
+
+  } catch (e) {
+    console.log("[HANDLER LISTAR MEMBROS] ERRO:", e);
+    await sock.sendMessage(msg.key.remoteJid, {
+      text: "❌ Erro ao listar membros."
+    });
+  }
+}
+// =========================================================
+// FIM — Handler do comando !membros
+// =========================================================
